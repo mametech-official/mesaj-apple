@@ -1,0 +1,17 @@
+{
+  "name": "mesaj-apple",
+  "version": "1.0.0",
+  "description": "Mesaj — Apple App Store (iOS / Xcode & Capacitor) Resmi Mobil Uygulama Projesi",
+  "private": true,
+  "scripts": {
+    "sync": "cap sync ios",
+    "open": "cap open ios"
+  },
+  "dependencies": {
+    "@capacitor/core": "^6.1.2",
+    "@capacitor/ios": "^6.1.2"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.1.2"
+  }
+}

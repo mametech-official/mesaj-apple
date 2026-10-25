@@ -1,0 +1,54 @@
+name: Apple iOS (Xcode & IPA) Build
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build-ios:
+    name: Build iOS App & Unsigned IPA on macOS
+    runs-on: macos-latest
+
+    steps:
+      - name: Depoyu İndir (Checkout)
+        uses: actions/checkout@v4
+
+      - name: Node.js Kurulumu
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Capacitor iOS Bağımlılıklarını Kur ve Senkronize Et
+        run: |
+          npm install --no-audit --no-fund
+          npx cap sync ios
+
+      - name: Xcode Projesi Derlemesi (iOS Device Unsigned Build)
+        working-directory: ios/App
+        run: |
+          xcodebuild clean build \
+            -project App.xcodeproj \
+            -scheme App \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath build \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: IPA Paketini Oluştur
+        working-directory: ios/App
+        run: |
+          mkdir -p Payload
+          cp -r build/Build/Products/Release-iphoneos/App.app Payload/
+          zip -r Mesaj-iOS-Unsigned.ipa Payload
+
+      - name: iOS IPA ve Xcode Derleme Çıktısını Yükle (Artifacts)
+        uses: actions/upload-artifact@v4
+        with:
+          name: Mesaj-Apple-iOS-Paketi
+          path: |
+            ios/App/Mesaj-iOS-Unsigned.ipa
+            ios/App/build/Build/Products/Release-iphoneos/App.app
+          if-no-files-found: warn
