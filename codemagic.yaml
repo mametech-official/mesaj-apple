@@ -1,0 +1,35 @@
+workflows:
+  ios-appstore-workflow:
+    name: Mesaj iOS App Store Yayinlama
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.mametech.mesaj
+      vars:
+        XCODE_WORKSPACE: "ios/App/App.xcworkspace"
+        XCODE_SCHEME: "App"
+      node: 20
+      xcode: latest
+      cocoapods: default
+    scripts:
+      - name: Capacitor Bagimliliklarini Kur ve Senkronize Et
+        script: |
+          npm install --no-audit --no-fund
+          npx cap sync ios
+      - name: Xcode Imza Profillerini Ayarla
+        script: |
+          xcode-project use-profiles
+      - name: App Store IPA Paketi Uret
+        script: |
+          xcode-project build-ipa \
+            --workspace "$CM_BUILD_DIR/$XCODE_WORKSPACE" \
+            --scheme "$XCODE_SCHEME"
+    artifacts:
+      - build/ios/ipa/*.ipa
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+        submit_to_app_store: false

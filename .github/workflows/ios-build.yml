@@ -7,7 +7,7 @@ on:
 
 jobs:
   build-ios:
-    name: Build iOS App & Unsigned IPA on macOS
+    name: Build iOS App & IPA on macOS
     runs-on: macos-latest
 
     steps:
@@ -19,36 +19,47 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Capacitor iOS Bağımlılıklarını Kur ve Senkronize Et
+      - name: Capacitor iOS Bağımlılıklarını Kur ve CocoaPods Senkronize Et
         run: |
           npm install --no-audit --no-fund
           npx cap sync ios
 
-      - name: Xcode Projesi Derlemesi (iOS Device Unsigned Build)
+      - name: Xcode Projesi Derlemesi (iOS Release Build)
         working-directory: ios/App
         run: |
-          xcodebuild clean build \
-            -project App.xcodeproj \
-            -scheme App \
-            -configuration Release \
-            -sdk iphoneos \
-            -derivedDataPath build \
-            CODE_SIGN_IDENTITY="" \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=NO
+          if [ -d "App.xcworkspace" ]; then
+            xcodebuild clean build \
+              -workspace App.xcworkspace \
+              -scheme App \
+              -configuration Release \
+              -sdk iphoneos \
+              -derivedDataPath build \
+              CODE_SIGN_IDENTITY="" \
+              CODE_SIGNING_REQUIRED=NO \
+              CODE_SIGNING_ALLOWED=NO
+          else
+            xcodebuild clean build \
+              -project App.xcodeproj \
+              -scheme App \
+              -configuration Release \
+              -sdk iphoneos \
+              -derivedDataPath build \
+              CODE_SIGN_IDENTITY="" \
+              CODE_SIGNING_REQUIRED=NO \
+              CODE_SIGNING_ALLOWED=NO
+          fi
 
-      - name: IPA Paketini Oluştur
+      - name: IPA Paketini Oluştur (Mesaj.ipa)
         working-directory: ios/App
         run: |
           mkdir -p Payload
           cp -r build/Build/Products/Release-iphoneos/App.app Payload/
-          zip -r Mesaj-iOS-Unsigned.ipa Payload
+          zip -r Mesaj.ipa Payload
 
-      - name: iOS IPA ve Xcode Derleme Çıktısını Yükle (Artifacts)
+      - name: iOS IPA Paketini Yükle (Artifacts)
         uses: actions/upload-artifact@v4
         with:
-          name: Mesaj-Apple-iOS-Paketi
+          name: Mesaj-Apple-iOS-IPA
           path: |
-            ios/App/Mesaj-iOS-Unsigned.ipa
-            ios/App/build/Build/Products/Release-iphoneos/App.app
+            ios/App/Mesaj.ipa
           if-no-files-found: warn
